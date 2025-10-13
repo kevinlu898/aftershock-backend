@@ -16,9 +16,9 @@ export default async function handler(req, res) {
 
   try {
     const { question } = req.body;
-
+    console.log(process.env.GEMINI_API_KEY);
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
 You are an earthquake preparedness assistant. Be calm, factual, and practical.
