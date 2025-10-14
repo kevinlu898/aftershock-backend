@@ -19,12 +19,7 @@ export default async function handler(req, res) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const prompt = `
-You are an earthquake preparedness assistant. Be calm, factual, and practical.
-User question: "${question}"
-`;
-
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent(question);
     const text = result.response.text();
 
     return res.status(200).json({ answer: text });
