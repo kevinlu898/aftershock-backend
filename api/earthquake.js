@@ -58,7 +58,6 @@ export default async function handler(req, res) {
 
   // If POST, trigger a fresh fetch. If GET, just return cached data (fetch on-demand if empty).
   if (req.method === "POST") {
-    await fetchFeed();
     if (!cachedData) {
       return res.status(503).json({ error: "Failed to fetch data", lastError });
     }
