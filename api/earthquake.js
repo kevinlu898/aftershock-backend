@@ -35,7 +35,7 @@ async function fetchFeed() {
 }
 
 // Initial fetch
-await fetchFeed();
+// await fetchFeed();
 
 // Poll every 10 minutes (600000 ms)
 const POLL_INTERVAL_MS = 10 * 60 * 1000;
