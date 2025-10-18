@@ -35,7 +35,7 @@ async function fetchFeed() {
 }
 
 // Initial fetch
-fetchFeed();
+await fetchFeed();
 
 // Poll every 10 minutes (600000 ms)
 const POLL_INTERVAL_MS = 10 * 60 * 1000;
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
   // If POST, trigger a fresh fetch. If GET, just return cached data (fetch on-demand if empty).
   if (req.method === "POST") {
     if (!cachedData) {
-      return res.status(503).json({ error: "Failed to fetch data", lastError });
+      await fetchFeed();
     }
     res.setHeader("Content-Type", "application/json");
     return res.status(200).json({
