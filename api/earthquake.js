@@ -38,7 +38,7 @@ async function fetchFeed() {
 // await fetchFeed();
 
 // Poll every 10 minutes (600000 ms)
-const POLL_INTERVAL_MS = 10 * 60 * 1000;
+const POLL_INTERVAL_MS = 1 * 60 * 1000;
 setInterval(fetchFeed, POLL_INTERVAL_MS);
 
 // Vercel serverless function entrypoint
