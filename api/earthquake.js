@@ -63,28 +63,10 @@ export default async function handler(req, res) {
       return res.status(503).json({ error: "Failed to fetch data", lastError });
     }
     res.setHeader("Content-Type", "application/json");
-    return res
-      .status(200)
-      .json({
-        refreshed: true,
-        lastFetched: lastFetched ? lastFetched.toISOString() : null,
-        data: cachedData,
-      });
-  }
-
-  // GET: ensure we have cached data, try on-demand fetch if missing
-  if (!cachedData) {
-    await fetchFeed();
-    if (!cachedData) {
-      return res.status(503).json({ error: "No data cached yet", lastError });
-    }
-  }
-
-  res.setHeader("Content-Type", "application/json");
-  return res
-    .status(200)
-    .json({
+    return res.status(200).json({
+      refreshed: true,
       lastFetched: lastFetched ? lastFetched.toISOString() : null,
       data: cachedData,
     });
+  }
 }
