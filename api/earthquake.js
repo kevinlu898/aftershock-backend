@@ -45,17 +45,34 @@ setInterval(fetchFeed, POLL_INTERVAL_MS);
 export default async function handler(req, res) {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     return res.status(200).end();
   }
 
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
+  // Support GET (return cached data) and POST (trigger an on-demand refresh and return data)
+  if (req.method !== "GET" && req.method !== "POST") {
+    res.setHeader("Allow", "GET,POST");
     return res.status(405).end("Method Not Allowed");
   }
 
-  // If we don't have cached data yet, attempt an on-demand fetch before failing.
+  // If POST, trigger a fresh fetch. If GET, just return cached data (fetch on-demand if empty).
+  if (req.method === "POST") {
+    await fetchFeed();
+    if (!cachedData) {
+      return res.status(503).json({ error: "Failed to fetch data", lastError });
+    }
+    res.setHeader("Content-Type", "application/json");
+    return res
+      .status(200)
+      .json({
+        refreshed: true,
+        lastFetched: lastFetched ? lastFetched.toISOString() : null,
+        data: cachedData,
+      });
+  }
+
+  // GET: ensure we have cached data, try on-demand fetch if missing
   if (!cachedData) {
     await fetchFeed();
     if (!cachedData) {
@@ -64,8 +81,10 @@ export default async function handler(req, res) {
   }
 
   res.setHeader("Content-Type", "application/json");
-  return res.status(200).json({
-    lastFetched: lastFetched ? lastFetched.toISOString() : null,
-    data: cachedData,
-  });
+  return res
+    .status(200)
+    .json({
+      lastFetched: lastFetched ? lastFetched.toISOString() : null,
+      data: cachedData,
+    });
 }
