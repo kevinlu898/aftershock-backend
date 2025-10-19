@@ -17,7 +17,7 @@ async function fetchNews() {
   }
 
   try {
-    const url = `${NEWS_URL}?language=en&limit=50&api_token=${encodeURIComponent(
+    const url = `${NEWS_URL}?language=en&limit=3&search=earthquake&api_token=${encodeURIComponent(
       key
     )}`;
     const res = await fetch(url, {
@@ -89,10 +89,8 @@ export default async function handler(req, res) {
   }
 
   res.setHeader("Content-Type", "application/json");
-  return res
-    .status(200)
-    .json({
-      lastFetched: lastFetched ? lastFetched.toISOString() : null,
-      data: cachedNews,
-    });
+  return res.status(200).json({
+    lastFetched: lastFetched ? lastFetched.toISOString() : null,
+    data: cachedNews,
+  });
 }
