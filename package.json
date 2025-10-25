@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "nodemailer": "^7.0.10"
   }
 }
