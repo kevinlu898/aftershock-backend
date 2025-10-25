@@ -58,7 +58,7 @@ export default async function handler(req, res) {
   }
 
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  const RESEND_FROM = "aftershockapp@gmail.com";
+  const RESEND_FROM = "onboarding@resend.dev";
   if (!RESEND_API_KEY) {
     return res
       .status(500)
