@@ -1,10 +1,10 @@
 import nodemailer from "nodemailer";
 
-// Vercel serverless handler that sends a simple "test" email using nodemailer.
+// Vercel serverless handler that sends a simple "test" email using nodemailer via Gmail.
 // Accepts POST with JSON body: { "email": "recipient@example.com" }
-// Environment variables accepted (one of these setups must be present):
-// - SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
-// - or GMAIL_USER and GMAIL_APP_PASSWORD (for Gmail SMTP)
+// Environment variables required:
+// - GMAIL_USER - the Gmail address to send from (e.g. aftershockapp@gmail.com)
+// - GMAIL_APP_PASSWORD - an app password for the Gmail account
 // Optionally set SENDER_FROM to override the sender address.
 
 async function parseJsonBody(req) {
@@ -30,34 +30,15 @@ function isValidEmail(email) {
 }
 
 function createTransporter() {
-  // Prefer explicit SMTP settings
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT
-    ? parseInt(process.env.SMTP_PORT, 10)
-    : undefined;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (host && user && pass) {
-    return nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
-    });
-  }
-
-  // Fallback to Gmail app password
+  // Use Gmail with an app password. This simplifies configuration and avoids
+  // requiring raw SMTP host/port settings.
   const gmailUser = "aftershockapp@gmail.com";
   const gmailPass = process.env.GMAIL_APP_PASSWORD;
-  if (gmailPass) {
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: gmailUser, pass: gmailPass },
-    });
-  }
-
-  return null;
+  if (!gmailPass) return null;
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: gmailUser, pass: gmailPass },
+  });
 }
 
 export default async function handler(req, res) {
