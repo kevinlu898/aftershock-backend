@@ -29,6 +29,90 @@ function isValidEmail(email) {
   return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 }
 
+// Render plan object to a simple HTML and plain-text representation
+function renderPlanToHtml(plan) {
+  if (!plan || typeof plan !== "object") return "<p>No plan provided.</p>";
+  const parts = [];
+  parts.push(
+    '<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.4;color:#111">'
+  );
+  parts.push('<h2 style="margin-bottom:6px">Evacuation Plan</h2>');
+
+  // _meta
+  if (plan._meta && plan._meta.evacuateRoute) {
+    try {
+      const d = new Date(plan._meta.evacuateRoute);
+      if (!isNaN(d))
+        parts.push(
+          `<p><strong>Route timestamp:</strong> ${d.toLocaleString()}</p>`
+        );
+    } catch (e) {}
+  }
+
+  // helper to normalize small HTML fragments: convert divs to paragraphs and keep basic breaks
+  const normalizeHtmlFragment = (s) => {
+    if (!s) return "<p><em>None provided</em></p>";
+    // if string contains HTML tags, convert <div> to <p> to create paragraphs
+    let out = String(s);
+    out = out.replace(/<div[^>]*>/gi, "<p>");
+    out = out.replace(/<\/div>/gi, "</p>");
+    // ensure lone <br> are self-closed
+    out = out.replace(/<br\s*\/?>/gi, "<br/>");
+    // wrap plain text without paragraphs
+    if (!/<p/i.test(out)) out = `<p>${out}</p>`;
+    return out;
+  };
+
+  const sections = [
+    ["Evacuate Route", plan.evacuateRoute || plan["evacuateRoute"] || ""],
+    ["Aftermath Procedures", plan.aftermathProcedures || ""],
+    ["Meet Up Points", plan.meetUpPoints || plan.meetUpPoints || ""],
+    ["Other", plan.other || ""],
+  ];
+
+  for (const [title, value] of sections) {
+    parts.push(`<h3 style="margin:10px 0 4px; font-size:16px">${title}</h3>`);
+    parts.push(normalizeHtmlFragment(value));
+  }
+
+  parts.push("</div>");
+  return parts.join("\n");
+}
+
+function renderPlanToText(plan) {
+  if (!plan || typeof plan !== "object") return "No plan provided.";
+  const lines = [];
+  if (plan._meta && plan._meta.evacuateRoute) {
+    try {
+      const d = new Date(plan._meta.evacuateRoute);
+      if (!isNaN(d)) lines.push(`Route timestamp: ${d.toLocaleString()}`);
+    } catch (e) {}
+  }
+  const sections = [
+    ["Evacuate Route", plan.evacuateRoute || ""],
+    ["Aftermath Procedures", plan.aftermathProcedures || ""],
+    ["Meet Up Points", plan.meetUpPoints || ""],
+    ["Other", plan.other || ""],
+  ];
+  for (const [title, value] of sections) {
+    lines.push(`\n${title}:`);
+    if (!value) lines.push("  (none)");
+    else {
+      // strip HTML tags for plain text
+      const text = String(value)
+        .replace(/<[^>]*>/g, "")
+        .trim();
+      lines.push(
+        text
+          .split("\n")
+          .map((l) => "  " + l)
+          .join("\n")
+      );
+    }
+  }
+  return lines.join("\n");
+}
+
 function createTransporter() {
   // Use Gmail with an app password. This simplifies configuration and avoids
   // requiring raw SMTP host/port settings.
@@ -73,19 +157,24 @@ export default async function handler(req, res) {
   if (!transporter) {
     return res.status(500).json({
       error:
-        "No SMTP configuration found. Set SMTP_HOST/SMTP_USER/SMTP_PASS or GMAIL_APP_PASSWORD.",
+        "No Gmail app password configured. Set GMAIL_APP_PASSWORD in environment.",
     });
   }
 
   const from = "aftershockapp@gmail.com";
 
   try {
+    // Render plan content if provided in the request body
+    const plan = body && body.plan;
+    const htmlBody = renderPlanToHtml(plan);
+    const textBody = renderPlanToText(plan);
+
     const info = await transporter.sendMail({
       from,
       to: toEmail,
-      subject: "Test",
-      text: "test",
-      html: "<p>test</p>",
+      subject: "Your Evacuation Plan",
+      text: textBody,
+      html: htmlBody,
     });
 
     return res.status(200).json({ ok: true, messageId: info.messageId, info });
