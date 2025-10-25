@@ -29,9 +29,23 @@ function isValidEmail(email) {
   return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // Render plan object to a simple HTML and plain-text representation
-function renderPlanToHtml(plan) {
-  if (!plan || typeof plan !== "object") return "<p>No plan provided.</p>";
+function renderPlanToHtml(plan, contacts) {
+  if (
+    (!plan || typeof plan !== "object") &&
+    (!Array.isArray(contacts) || contacts.length === 0)
+  )
+    return "<p>No plan provided.</p>";
+  plan = plan || {};
   const parts = [];
   parts.push(
     '<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.4;color:#111">'
@@ -75,12 +89,36 @@ function renderPlanToHtml(plan) {
     parts.push(normalizeHtmlFragment(value));
   }
 
+  // Emergency contacts
+  if (Array.isArray(contacts) && contacts.length > 0) {
+    parts.push(
+      '<h3 style="margin:10px 0 4px; font-size:16px">Emergency Contacts</h3>'
+    );
+    parts.push('<ul style="padding-left:18px;margin-top:6px">');
+    for (const c of contacts) {
+      const name = c && c.name ? String(c.name) : "(no name)";
+      const phone = c && c.phone ? String(c.phone) : "(no phone)";
+      const rel = c && c.relation ? String(c.relation) : "";
+      parts.push(
+        `<li style="margin-bottom:6px"><strong>${escapeHtml(name)}</strong>${
+          rel ? ` — ${escapeHtml(rel)}` : ""
+        }<br/><a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></li>`
+      );
+    }
+    parts.push("</ul>");
+  }
+
   parts.push("</div>");
   return parts.join("\n");
 }
 
-function renderPlanToText(plan) {
-  if (!plan || typeof plan !== "object") return "No plan provided.";
+function renderPlanToText(plan, contacts) {
+  if (
+    (!plan || typeof plan !== "object") &&
+    (!Array.isArray(contacts) || contacts.length === 0)
+  )
+    return "No plan provided.";
+  plan = plan || {};
   const lines = [];
   if (plan._meta && plan._meta.evacuateRoute) {
     try {
@@ -108,6 +146,17 @@ function renderPlanToText(plan) {
           .map((l) => "  " + l)
           .join("\n")
       );
+    }
+  }
+
+  // Emergency contacts (plain text)
+  if (contacts && Array.isArray(contacts) && contacts.length > 0) {
+    lines.push("\nEmergency Contacts:");
+    for (const c of contacts) {
+      const name = c && c.name ? String(c.name) : "(no name)";
+      const phone = c && c.phone ? String(c.phone) : "(no phone)";
+      const rel = c && c.relation ? String(c.relation) : "";
+      lines.push(`  - ${name}${rel ? ` (${rel})` : ""}: ${phone}`);
     }
   }
   return lines.join("\n");
@@ -164,10 +213,15 @@ export default async function handler(req, res) {
   const from = "aftershockapp@gmail.com";
 
   try {
-    // Render plan content if provided in the request body
+    // Render plan content if provided in the request body, and include emergency_contact
     const plan = body && body.plan;
-    const htmlBody = renderPlanToHtml(plan);
-    const textBody = renderPlanToText(plan);
+    const contacts =
+      body &&
+      (body.emergency_contact || body.emergencyContacts || body.contacts)
+        ? body.emergency_contact || body.emergencyContacts || body.contacts
+        : [];
+    const htmlBody = renderPlanToHtml(plan, contacts);
+    const textBody = renderPlanToText(plan, contacts);
 
     const info = await transporter.sendMail({
       from,
