@@ -56,10 +56,13 @@ function renderPlanToHtml(plan, contacts, medical) {
   parts.push(
     '<p style="margin-bottom:10px;color:#333">You requested an export of your evacuation plan. Below is the information we have on file — please review and share as needed.</p>'
   );
-  parts.push('<h2 style="margin-bottom:6px">Evacuation Plan</h2>');
   // wrap the main plan content in a styled card similar to Emergency/Medical sections
   parts.push(
     '<section style="padding:12px;background:#f0f7ff;border-left:4px solid #0070f3;border-radius:6px;margin-bottom:18px">'
+  );
+  // place the header inside the blue card and tighten spacing
+  parts.push(
+    '<h2 style="margin:0 0 8px 0;color:#003a8c;font-size:18px">Evacuation Plan</h2>'
   );
 
   // _meta
@@ -101,11 +104,6 @@ function renderPlanToHtml(plan, contacts, medical) {
 
   // close the plan card
   parts.push("</section>");
-
-  // closing thank-you message
-  parts.push(
-    '<p style="margin-top:18px;color:#666;font-size:14px">Thank you for using Aftershock!</p>'
-  );
 
   // Emergency contacts
   if (Array.isArray(contacts) && contacts.length > 0) {
@@ -170,6 +168,10 @@ function renderPlanToHtml(plan, contacts, medical) {
   }
 
   parts.push("</div>");
+  // closing thank-you message (placed at the end of the email)
+  parts.push(
+    '<p style="margin-top:18px;color:#666;font-size:14px">Thank you for using Aftershock!</p>'
+  );
   return parts.join("\n");
 }
 
