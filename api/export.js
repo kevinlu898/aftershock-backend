@@ -39,13 +39,15 @@ function escapeHtml(str) {
 }
 
 // Render plan object to a simple HTML and plain-text representation
-function renderPlanToHtml(plan, contacts) {
+function renderPlanToHtml(plan, contacts, medical) {
   if (
     (!plan || typeof plan !== "object") &&
-    (!Array.isArray(contacts) || contacts.length === 0)
+    (!Array.isArray(contacts) || contacts.length === 0) &&
+    (!Array.isArray(medical) || medical.length === 0)
   )
     return "<p>No plan provided.</p>";
   plan = plan || {};
+  medical = medical || [];
   const parts = [];
   parts.push(
     '<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.4;color:#111">'
@@ -108,17 +110,73 @@ function renderPlanToHtml(plan, contacts) {
     parts.push("</ul>");
   }
 
+  // Emergency contacts
+  if (Array.isArray(contacts) && contacts.length > 0) {
+    parts.push(
+      '<h3 style="margin:10px 0 4px; font-size:16px">Emergency Contacts</h3>'
+    );
+    parts.push('<ul style="padding-left:18px;margin-top:6px">');
+    for (const c of contacts) {
+      const name = c && c.name ? String(c.name) : "(no name)";
+      const phone = c && c.phone ? String(c.phone) : "(no phone)";
+      const rel = c && c.relation ? String(c.relation) : "";
+      parts.push(
+        `<li style="margin-bottom:6px"><strong>${escapeHtml(name)}</strong>${
+          rel ? ` — ${escapeHtml(rel)}` : ""
+        }<br/><a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></li>`
+      );
+    }
+    parts.push("</ul>");
+  }
+
+  // Medical info
+  if (Array.isArray(medical) && medical.length > 0) {
+    parts.push(
+      '<h3 style="margin:10px 0 4px; font-size:16px">Medical Info</h3>'
+    );
+    parts.push('<ul style="padding-left:18px;margin-top:6px">');
+    for (const m of medical) {
+      const name = m && m.name ? String(m.name) : "(no name)";
+      const allergies = m && m.allergies ? String(m.allergies) : "";
+      const meds = m && m.medications ? String(m.medications) : "";
+      const blood = m && m.bloodType ? String(m.bloodType) : "";
+      const notes = m && m.notes ? String(m.notes) : "";
+      const updated =
+        m && m.updatedAt ? new Date(m.updatedAt).toLocaleString() : "";
+      parts.push(
+        `<li style="margin-bottom:8px"><strong>${escapeHtml(name)}</strong>${
+          blood ? ` — Blood: ${escapeHtml(blood)}` : ""
+        }<br/>${
+          allergies
+            ? `<strong>Allergies:</strong> ${escapeHtml(allergies)}<br/>`
+            : ""
+        }${
+          meds ? `<strong>Medications:</strong> ${escapeHtml(meds)}<br/>` : ""
+        }${notes ? `<strong>Notes:</strong> ${escapeHtml(notes)}<br/>` : ""}${
+          updated
+            ? `<small style="color:#666">Updated: ${escapeHtml(
+                updated
+              )}</small>`
+            : ""
+        }</li>`
+      );
+    }
+    parts.push("</ul>");
+  }
+
   parts.push("</div>");
   return parts.join("\n");
 }
 
-function renderPlanToText(plan, contacts) {
+function renderPlanToText(plan, contacts, medical) {
   if (
     (!plan || typeof plan !== "object") &&
-    (!Array.isArray(contacts) || contacts.length === 0)
+    (!Array.isArray(contacts) || contacts.length === 0) &&
+    (!Array.isArray(medical) || medical.length === 0)
   )
     return "No plan provided.";
   plan = plan || {};
+  medical = medical || [];
   const lines = [];
   if (plan._meta && plan._meta.evacuateRoute) {
     try {
@@ -157,6 +215,24 @@ function renderPlanToText(plan, contacts) {
       const phone = c && c.phone ? String(c.phone) : "(no phone)";
       const rel = c && c.relation ? String(c.relation) : "";
       lines.push(`  - ${name}${rel ? ` (${rel})` : ""}: ${phone}`);
+    }
+  }
+  // Medical info (plain text)
+  if (medical && Array.isArray(medical) && medical.length > 0) {
+    lines.push("\nMedical Info:");
+    for (const m of medical) {
+      const name = m && m.name ? String(m.name) : "(no name)";
+      const allergies = m && m.allergies ? String(m.allergies) : "";
+      const meds = m && m.medications ? String(m.medications) : "";
+      const blood = m && m.bloodType ? String(m.bloodType) : "";
+      const notes = m && m.notes ? String(m.notes) : "";
+      const updated =
+        m && m.updatedAt ? new Date(m.updatedAt).toLocaleString() : "";
+      lines.push(`  - ${name}${blood ? ` (Blood: ${blood})` : ""}`);
+      if (allergies) lines.push(`      Allergies: ${allergies}`);
+      if (meds) lines.push(`      Medications: ${meds}`);
+      if (notes) lines.push(`      Notes: ${notes}`);
+      if (updated) lines.push(`      Updated: ${updated}`);
     }
   }
   return lines.join("\n");
@@ -220,8 +296,12 @@ export default async function handler(req, res) {
       (body.emergency_contact || body.emergencyContacts || body.contacts)
         ? body.emergency_contact || body.emergencyContacts || body.contacts
         : [];
-    const htmlBody = renderPlanToHtml(plan, contacts);
-    const textBody = renderPlanToText(plan, contacts);
+    const medical =
+      body && (body.medicalinfo || body.medical_info || body.medicalInfo)
+        ? body.medicalinfo || body.medical_info || body.medicalInfo
+        : [];
+    const htmlBody = renderPlanToHtml(plan, contacts, medical);
+    const textBody = renderPlanToText(plan, contacts, medical);
 
     const info = await transporter.sendMail({
       from,
