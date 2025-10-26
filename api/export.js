@@ -62,7 +62,7 @@ function renderPlanToHtml(plan, contacts, medical) {
   );
   // place the header inside the blue card and tighten spacing
   parts.push(
-    '<h2 style="margin:0 0 8px 0;color:#003a8c;font-size:18px">Evacuation Plan</h2>'
+    '<h2 style="margin:0 0 8px 0;color:#000;font-size:18px">Evacuation Plan</h2>'
   );
 
   // _meta
