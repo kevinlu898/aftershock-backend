@@ -1,12 +1,5 @@
 import nodemailer from "nodemailer";
 
-// Vercel serverless handler that sends a simple "test" email using nodemailer via Gmail.
-// Accepts POST with JSON body: { "email": "recipient@example.com" }
-// Environment variables required:
-// - GMAIL_USER - the Gmail address to send from (e.g. aftershockapp@gmail.com)
-// - GMAIL_APP_PASSWORD - an app password for the Gmail account
-// Optionally set SENDER_FROM to override the sender address.
-
 async function parseJsonBody(req) {
   if (req.body) return req.body;
   return await new Promise((resolve, reject) => {
@@ -38,7 +31,6 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-// Render plan object to a simple HTML and plain-text representation
 function renderPlanToHtml(plan, contacts, medical) {
   if (
     (!plan || typeof plan !== "object") &&
@@ -52,20 +44,17 @@ function renderPlanToHtml(plan, contacts, medical) {
   parts.push(
     '<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.4;color:#111">'
   );
-  // short intro acknowledging the export and introducing the information
+
   parts.push(
     '<p style="margin-bottom:10px;color:#333">You requested an export of your evacuation plan. Below is the information we have on file — please review and share as needed.</p>'
   );
-  // wrap the main plan content in a styled card similar to Emergency/Medical sections
   parts.push(
     '<section style="padding:12px;background:#f0f7ff;border-left:4px solid #0070f3;border-radius:6px;margin-bottom:18px">'
   );
-  // place the header inside the blue card and tighten spacing
   parts.push(
     '<h2 style="margin:0 0 8px 0;color:#000;font-size:18px">Evacuation Plan</h2>'
   );
 
-  // _meta
   if (plan._meta && plan._meta.evacuateRoute) {
     try {
       const d = new Date(plan._meta.evacuateRoute);
@@ -76,16 +65,12 @@ function renderPlanToHtml(plan, contacts, medical) {
     } catch (e) {}
   }
 
-  // helper to normalize small HTML fragments: convert divs to paragraphs and keep basic breaks
   const normalizeHtmlFragment = (s) => {
     if (!s) return "<p><em>None provided</em></p>";
-    // if string contains HTML tags, convert <div> to <p> to create paragraphs
     let out = String(s);
     out = out.replace(/<div[^>]*>/gi, "<p>");
     out = out.replace(/<\/div>/gi, "</p>");
-    // ensure lone <br> are self-closed
     out = out.replace(/<br\s*\/?>/gi, "<br/>");
-    // wrap plain text without paragraphs
     if (!/<p/i.test(out)) out = `<p>${out}</p>`;
     return out;
   };
@@ -102,10 +87,8 @@ function renderPlanToHtml(plan, contacts, medical) {
     parts.push(normalizeHtmlFragment(value));
   }
 
-  // close the plan card
   parts.push("</section>");
 
-  // Emergency contacts
   if (Array.isArray(contacts) && contacts.length > 0) {
     parts.push(
       '<section style="padding:12px;background:#fff9f0;border-left:4px solid #ff9900;border-radius:6px;margin-bottom:18px">'
@@ -128,7 +111,6 @@ function renderPlanToHtml(plan, contacts, medical) {
     parts.push("</section>");
   }
 
-  // Medical info
   if (Array.isArray(medical) && medical.length > 0) {
     parts.push(
       '<section style="padding:12px;background:#f7fff5;border-left:4px solid #2ecc71;border-radius:6px;margin-bottom:18px">'
@@ -168,7 +150,6 @@ function renderPlanToHtml(plan, contacts, medical) {
   }
 
   parts.push("</div>");
-  // closing thank-you message (placed at the end of the email)
   parts.push(
     '<p style="margin-top:18px;color:#666;font-size:14px">Thank you for using Aftershock!</p>'
   );
@@ -185,7 +166,6 @@ function renderPlanToText(plan, contacts, medical) {
   plan = plan || {};
   medical = medical || [];
   const lines = [];
-  // intro acknowledgement
   lines.push(
     "You requested an export of your evacuation plan. Below is the information we have on file."
   );
@@ -199,7 +179,6 @@ function renderPlanToText(plan, contacts, medical) {
     lines.push(`\n${title}:`);
     if (!value) lines.push("  (none)");
     else {
-      // strip HTML tags for plain text
       const text = String(value)
         .replace(/<[^>]*>/g, "")
         .trim();
@@ -212,7 +191,6 @@ function renderPlanToText(plan, contacts, medical) {
     }
   }
 
-  // Emergency contacts (plain text)
   if (contacts && Array.isArray(contacts) && contacts.length > 0) {
     lines.push("\nEmergency Contacts:");
     for (const c of contacts) {
@@ -222,7 +200,6 @@ function renderPlanToText(plan, contacts, medical) {
       lines.push(`  - ${name}${rel ? ` (${rel})` : ""}: ${phone}`);
     }
   }
-  // Medical info (plain text)
   if (medical && Array.isArray(medical) && medical.length > 0) {
     lines.push("\nMedical Info:");
     for (const m of medical) {
@@ -240,7 +217,6 @@ function renderPlanToText(plan, contacts, medical) {
       if (updated) lines.push(`      Updated: ${updated}`);
     }
   }
-  // closing thank-you line
   lines.push("\nThank you for using Aftershock!");
   return lines.join("\n");
 }
@@ -296,7 +272,6 @@ export default async function handler(req, res) {
   const from = "aftershockapp@gmail.com";
 
   try {
-    // Render plan content if provided in the request body, and include emergency_contact
     const plan = body && body.plan;
     const contacts =
       body &&

@@ -1,6 +1,3 @@
-// Vercel serverless handler: daily polling of thenewsapi top endpoint and POST to return cached data
-// Expects THENEWSAPI_KEY in environment variables
-
 const NEWS_URL = "https://api.thenewsapi.com/v1/news/top";
 
 let cachedNews = null;
@@ -36,15 +33,12 @@ async function fetchNews() {
   }
 }
 
-// Initial fetch (do not await to avoid blocking cold start)
 fetchNews();
 
-// Poll daily
 setInterval(() => {
   fetchNews();
 }, DAY_MS);
 
-// parse JSON body helper
 async function parseJsonBody(req) {
   if (req.body) return req.body;
   return await new Promise((resolve, reject) => {
@@ -63,7 +57,6 @@ async function parseJsonBody(req) {
 }
 
 export default async function handler(req, res) {
-  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -74,14 +67,10 @@ export default async function handler(req, res) {
     return res.status(405).end("Method Not Allowed");
   }
 
-  // allow an optional body (for future filters); we simply return cached news now
   try {
     await parseJsonBody(req).catch(() => null);
-  } catch (err) {
-    // ignore parse errors for now
-  }
+  } catch (err) {}
 
-  // if no cached data, try to fetch now
   if (!cachedNews) await fetchNews();
 
   if (!cachedNews) {
