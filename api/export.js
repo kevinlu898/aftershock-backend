@@ -94,24 +94,8 @@ function renderPlanToHtml(plan, contacts, medical) {
   // Emergency contacts
   if (Array.isArray(contacts) && contacts.length > 0) {
     parts.push(
-      '<h3 style="margin:10px 0 4px; font-size:16px">Emergency Contacts</h3>'
+      '<section style="padding:12px;background:#fff9f0;border-left:4px solid #ff9900;border-radius:6px;margin-bottom:18px">'
     );
-    parts.push('<ul style="padding-left:18px;margin-top:6px">');
-    for (const c of contacts) {
-      const name = c && c.name ? String(c.name) : "(no name)";
-      const phone = c && c.phone ? String(c.phone) : "(no phone)";
-      const rel = c && c.relation ? String(c.relation) : "";
-      parts.push(
-        `<li style="margin-bottom:6px"><strong>${escapeHtml(name)}</strong>${
-          rel ? ` — ${escapeHtml(rel)}` : ""
-        }<br/><a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></li>`
-      );
-    }
-    parts.push("</ul>");
-  }
-
-  // Emergency contacts
-  if (Array.isArray(contacts) && contacts.length > 0) {
     parts.push(
       '<h3 style="margin:10px 0 4px; font-size:16px">Emergency Contacts</h3>'
     );
@@ -127,10 +111,14 @@ function renderPlanToHtml(plan, contacts, medical) {
       );
     }
     parts.push("</ul>");
+    parts.push("</section>");
   }
 
   // Medical info
   if (Array.isArray(medical) && medical.length > 0) {
+    parts.push(
+      '<section style="padding:12px;background:#f7fff5;border-left:4px solid #2ecc71;border-radius:6px;margin-bottom:18px">'
+    );
     parts.push(
       '<h3 style="margin:10px 0 4px; font-size:16px">Medical Info</h3>'
     );
@@ -162,6 +150,7 @@ function renderPlanToHtml(plan, contacts, medical) {
       );
     }
     parts.push("</ul>");
+    parts.push("</section>");
   }
 
   parts.push("</div>");
@@ -178,12 +167,6 @@ function renderPlanToText(plan, contacts, medical) {
   plan = plan || {};
   medical = medical || [];
   const lines = [];
-  if (plan._meta && plan._meta.evacuateRoute) {
-    try {
-      const d = new Date(plan._meta.evacuateRoute);
-      if (!isNaN(d)) lines.push(`Route timestamp: ${d.toLocaleString()}`);
-    } catch (e) {}
-  }
   const sections = [
     ["Evacuate Route", plan.evacuateRoute || ""],
     ["Aftermath Procedures", plan.aftermathProcedures || ""],
