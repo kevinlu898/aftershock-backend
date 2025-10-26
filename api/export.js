@@ -52,7 +52,15 @@ function renderPlanToHtml(plan, contacts, medical) {
   parts.push(
     '<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.4;color:#111">'
   );
+  // short intro acknowledging the export and introducing the information
+  parts.push(
+    '<p style="margin-bottom:10px;color:#333">You requested an export of your evacuation plan. Below is the information we have on file — please review and share as needed.</p>'
+  );
   parts.push('<h2 style="margin-bottom:6px">Evacuation Plan</h2>');
+  // wrap the main plan content in a styled card similar to Emergency/Medical sections
+  parts.push(
+    '<section style="padding:12px;background:#f0f7ff;border-left:4px solid #0070f3;border-radius:6px;margin-bottom:18px">'
+  );
 
   // _meta
   if (plan._meta && plan._meta.evacuateRoute) {
@@ -90,6 +98,14 @@ function renderPlanToHtml(plan, contacts, medical) {
     parts.push(`<h3 style="margin:10px 0 4px; font-size:16px">${title}</h3>`);
     parts.push(normalizeHtmlFragment(value));
   }
+
+  // close the plan card
+  parts.push("</section>");
+
+  // closing thank-you message
+  parts.push(
+    '<p style="margin-top:18px;color:#666;font-size:14px">Thank you for using Aftershock!</p>'
+  );
 
   // Emergency contacts
   if (Array.isArray(contacts) && contacts.length > 0) {
@@ -167,6 +183,10 @@ function renderPlanToText(plan, contacts, medical) {
   plan = plan || {};
   medical = medical || [];
   const lines = [];
+  // intro acknowledgement
+  lines.push(
+    "You requested an export of your evacuation plan. Below is the information we have on file."
+  );
   const sections = [
     ["Evacuate Route", plan.evacuateRoute || ""],
     ["Aftermath Procedures", plan.aftermathProcedures || ""],
@@ -218,6 +238,8 @@ function renderPlanToText(plan, contacts, medical) {
       if (updated) lines.push(`      Updated: ${updated}`);
     }
   }
+  // closing thank-you line
+  lines.push("\nThank you for using Aftershock!");
   return lines.join("\n");
 }
 
